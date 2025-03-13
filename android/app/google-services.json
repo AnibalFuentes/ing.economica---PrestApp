@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "49828557910",
+    "project_id": "prest-app",
+    "storage_bucket": "prest-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:49828557910:android:fabf1d80e73bd049ccb7f7",
+        "android_client_info": {
+          "package_name": "com.example.prestapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCM80nizuaUGC4z9bawe-teplSfmtU5w4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

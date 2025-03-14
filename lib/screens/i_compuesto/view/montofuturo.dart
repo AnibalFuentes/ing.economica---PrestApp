@@ -26,7 +26,7 @@ class _MontofuturoState extends State<Montofuturo> {
     'Cuatrimestral': 3,
     'Trimestral': 4,
     'Bimestral': 6,
-    'Mensual': 12
+    'Mensual': 12,
   };
 
   final MontofuturoCalcular _calculator = MontofuturoCalcular();
@@ -47,23 +47,115 @@ class _MontofuturoState extends State<Montofuturo> {
         final int months = int.tryParse(_monthsController.text) ?? 0;
         final int years = int.tryParse(_yearsController.text) ?? 0;
         startDate = DateTime.now();
-        endDate =
-            startDate.add(Duration(days: days + months * 30 + years * 365));
+        endDate = startDate.add(
+          Duration(days: days + months * 30 + years * 365),
+        );
       }
 
       setState(() {
         _futureAmount = _calculator.calculateFutureAmount(
-            capital: capital,
-            rate: rate / 100,
-            startDate: startDate,
-            endDate: endDate,
-            vecesporano: veces);
+          capital: capital,
+          rate: rate / 100,
+          startDate: startDate,
+          endDate: endDate,
+          vecesporano: veces,
+        );
       });
+
+      // Mostrar el resultado en un diálogo
+      _showResultDialog();
     }
   }
 
+  void _showResultDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Resultado',
+            style: TextStyle(
+              color: Color(0xFF0A4D68),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF05BFDB).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.monetization_on,
+                      color: Color(0xFF0A4D68),
+                      size: 32,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Monto Futuro:',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF0A4D68)),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _calculator.formatNumber(_futureAmount!),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0A4D68),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'El monto futuro calculado se muestra arriba.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Cerrar',
+                style: TextStyle(color: Color(0xFF088395)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF05BFDB),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Nuevo cálculo'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -81,220 +173,270 @@ class _MontofuturoState extends State<Montofuturo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cálculo del Monto Futuro"),
+        title: const Text(
+          "Cálculo del Monto Futuro",
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
+        backgroundColor: const Color(0xFF0A4D68),
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _capitalController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Capital Inicial",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese el capital inicial';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF7FF),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: Colors.grey, // Color del borde
-                    width: 1, // Ancho del borde
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded:
-                        true, // Permite que el DropdownButton ocupe todo el ancho disponible
-                    value: frecuenciaSeleccionada,
-                    onChanged: (String? nuevoValor) {
-                      setState(() {
-                        frecuenciaSeleccionada = nuevoValor!;
-                      });
-                    },
-                    items: opcionesFrecuencia.keys
-                        .map<DropdownMenuItem<String>>((String valor) {
-                      return DropdownMenuItem<String>(
-                        value: valor,
-                        child: Text(valor),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _rateController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Tasa de Interés (%)",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese la tasa de interés';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              SwitchListTile(
-                title: const Text("¿Conoce las fechas exactas del crédito?"),
-                value: _knowsExactDates,
-                onChanged: (bool value) {
-                  setState(() {
-                    _knowsExactDates = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
-              if (_knowsExactDates) ...[
-                TextFormField(
-                  controller: _startDateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: "Fecha de Inicio",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () =>
-                          _selectDate(context, _startDateController),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingrese la fecha de inicio';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _endDateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: "Fecha de Finalización",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: () => _selectDate(context, _endDateController),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingrese la fecha de finalización';
-                    }
-                    return null;
-                  },
-                ),
-              ] else ...[
-                TextFormField(
-                  controller: _daysController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Número de Días",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _monthsController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Número de Meses",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _yearsController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Número de Años",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _calculateFutureAmount,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(20),
-                    backgroundColor: const Color(0xFF232323),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text("Calcular Monto Futuro"),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (_futureAmount != null)
-                SizedBox(
-                  width: double.infinity,
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF232323),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          const Icon(
-                            Icons.monetization_on,
-                            color: Colors.white,
-                            size: 26,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                              child: Center(
-                            child: Text(
-                              "Monto Futuro: ${_calculator.formatNumber(_futureAmount!)}",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          )),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0A4D68), Color(0xFF088395)],
           ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                // Campo de Capital Inicial
+                _buildTextField(
+                  _capitalController,
+                  "Capital Inicial",
+                  Icons.account_balance_wallet,
+                ),
+                const SizedBox(height: 20),
+
+                // Selector de Frecuencia
+                _buildFrequencyDropdown(),
+                const SizedBox(height: 20),
+
+                // Campo de Tasa de Interés
+                _buildTextField(
+                  _rateController,
+                  "Tasa de Interés (%)",
+                  Icons.percent,
+                ),
+                const SizedBox(height: 20),
+
+                // Switch para Fechas Exactas
+                _buildDateSwitch(),
+                const SizedBox(height: 20),
+
+                // Campos de Fechas o Período
+                if (_knowsExactDates) ...[
+                  _buildDateField(
+                    _startDateController,
+                    "Fecha de Inicio",
+                    Icons.calendar_today,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildDateField(
+                    _endDateController,
+                    "Fecha de Finalización",
+                    Icons.calendar_today,
+                  ),
+                ] else ...[
+                  _buildSmallTextField(_daysController, "Días", Icons.today),
+                  const SizedBox(height: 20),
+                  _buildSmallTextField(
+                    _monthsController,
+                    "Meses",
+                    Icons.date_range,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSmallTextField(
+                    _yearsController,
+                    "Años",
+                    Icons.calendar_view_month,
+                  ),
+                ],
+                const SizedBox(height: 30),
+
+                // Botón de Calcular
+                _buildCalculateButton(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget para construir un campo de texto
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          borderSide: const BorderSide(color: Colors.white70),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          borderSide: const BorderSide(color: Colors.white70),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Por favor ingrese $label';
+        }
+        return null;
+      },
+    );
+  }
+
+  // Widget para construir el selector de frecuencia
+  Widget _buildFrequencyDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white70),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: frecuenciaSeleccionada,
+          onChanged: (String? nuevoValor) {
+            setState(() {
+              frecuenciaSeleccionada = nuevoValor!;
+            });
+          },
+          items:
+              opcionesFrecuencia.keys.map<DropdownMenuItem<String>>((
+                String valor,
+              ) {
+                return DropdownMenuItem<String>(
+                  value: valor,
+                  child: Text(
+                    valor,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+          dropdownColor: const Color(0xFF088395),
+          icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  // Widget para construir el switch de fechas exactas
+  Widget _buildDateSwitch() {
+    return SwitchListTile(
+      title: const Text(
+        "¿Conoce las fechas exactas del crédito?",
+        style: TextStyle(color: Colors.white),
+      ),
+      value: _knowsExactDates,
+      onChanged: (bool value) {
+        setState(() {
+          _knowsExactDates = value;
+        });
+      },
+      activeColor: const Color(0xFF05BFDB),
+      inactiveTrackColor: Colors.white70,
+    );
+  }
+
+  // Widget para construir un campo de fecha
+  Widget _buildDateField(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Color(0xFF088395)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          suffixIcon: IconButton(
+            icon: Icon(Icons.calendar_today, color: Color(0xFF088395)),
+            onPressed: () => _selectDate(context, controller),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget para construir un campo de texto pequeño
+  Widget _buildSmallTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          borderSide: const BorderSide(color: Colors.white70),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          borderSide: const BorderSide(color: Colors.white70),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30.0),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  // Widget para construir el botón de calcular
+  Widget _buildCalculateButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _calculateFutureAmount,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.all(20),
+          backgroundColor: const Color(0xFF05BFDB),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+        ),
+        child: const Text(
+          "Calcular Monto Futuro",
+          style: TextStyle(fontSize: 16),
         ),
       ),
     );

@@ -19,7 +19,6 @@ class InterestCalculator {
     required DateTime startDate,
     required DateTime endDate,
   }) {
-    print("aquiii");
     final int days = endDate.difference(startDate).inDays;
     final double periodInYears = days / 360;
 

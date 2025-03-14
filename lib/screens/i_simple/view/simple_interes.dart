@@ -28,8 +28,9 @@ class _SimpleInteresState extends State<SimpleInteres> {
   bool _useExactDates = false; // Para alternar entre fechas exactas o manual
   bool _isCalculating = false;
 
+  // Update this in your _calculateInterestRate() method
   void _calculateInterestRate() {
-    final futureAmount = double.tryParse(_futureAmountController.text);
+    // Parse input values
     final initialCapital = double.tryParse(_initialCapitalController.text);
     final interesGenerado = double.tryParse(_interesGeneradoController.text);
 
@@ -37,7 +38,7 @@ class _SimpleInteresState extends State<SimpleInteres> {
       _isCalculating = true;
     });
 
-    // Simulando un cálculo que toma tiempo
+    // Simulate calculation time
     Future.delayed(const Duration(milliseconds: 500), () {
       if (initialCapital == null || initialCapital <= 0) {
         setState(() {
@@ -48,25 +49,65 @@ class _SimpleInteresState extends State<SimpleInteres> {
         return;
       }
 
+      if (interesGenerado == null || interesGenerado < 0) {
+        setState(() {
+          _interestRate = null;
+          _isCalculating = false;
+        });
+        _showSnackBar('Error: El interés generado debe ser un valor válido');
+        return;
+      }
+
       double? timeInYears;
 
       if (_useExactDates) {
         final startDate = DateTime.tryParse(_startDateController.text);
         final endDate = DateTime.tryParse(_endDateController.text);
 
-        if (startDate != null && endDate != null) {
-          final difference = endDate.difference(startDate).inDays;
-          timeInYears = difference / 365.0;
+        if (startDate == null || endDate == null) {
+          setState(() {
+            _interestRate = null;
+            _isCalculating = false;
+          });
+          _showSnackBar('Error: Por favor ingrese fechas válidas');
+          return;
         }
+
+        if (endDate.isBefore(startDate)) {
+          setState(() {
+            _interestRate = null;
+            _isCalculating = false;
+          });
+          _showSnackBar(
+            'Error: La fecha final debe ser posterior a la inicial',
+          );
+          return;
+        }
+
+        final difference = endDate.difference(startDate).inDays;
+        timeInYears = difference / 365.0;
       } else {
         final days = int.tryParse(_dayController.text) ?? 0;
         final months = int.tryParse(_monthController.text) ?? 0;
         final years = int.tryParse(_yearController.text) ?? 0;
 
-        timeInYears = years + (months / 12) + (days / 360);
+        if (days == 0 && months == 0 && years == 0) {
+          setState(() {
+            _interestRate = null;
+            _isCalculating = false;
+          });
+          _showSnackBar('Error: Por favor ingrese un período de tiempo válido');
+          return;
+        }
+
+        timeInYears =
+            years +
+            (months / 12) +
+            (days / 365); // Changed from 360 to 365 for consistency
       }
 
-      if (timeInYears != null && timeInYears > 0 && interesGenerado != null) {
+      // Final calculation
+      if (timeInYears > 0) {
         final rate = (interesGenerado / (initialCapital * timeInYears)) * 100;
         setState(() {
           _interestRate = rate;
@@ -78,7 +119,7 @@ class _SimpleInteresState extends State<SimpleInteres> {
           _interestRate = null;
           _isCalculating = false;
         });
-        _showSnackBar('Error: Verifica los datos de tiempo e interés');
+        _showSnackBar('Error: El período de tiempo debe ser mayor a 0');
       }
     });
   }

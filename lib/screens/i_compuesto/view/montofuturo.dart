@@ -20,6 +20,7 @@ class _MontofuturoState extends State<Montofuturo> {
   double? _futureAmount;
   bool _knowsExactDates = true;
   String frecuenciaSeleccionada = 'Anual';
+  String _selectedView = 'Normal'; // Agregar esta línea
   final Map<String, int> opcionesFrecuencia = {
     'Anual': 1,
     'Semestral': 2,
@@ -67,6 +68,23 @@ class _MontofuturoState extends State<Montofuturo> {
     }
   }
 
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text = _calculator.formatDate(picked);
+      });
+    }
+  }
+
   void _showResultDialog() {
     showDialog(
       context: context,
@@ -105,7 +123,7 @@ class _MontofuturoState extends State<Montofuturo> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _calculator.formatNumber(_futureAmount!),
+                      _formatAmountResult(_futureAmount!),
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -136,6 +154,14 @@ class _MontofuturoState extends State<Montofuturo> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                // Clear form
+                _capitalController.clear();
+                _rateController.clear();
+                _startDateController.clear();
+                _endDateController.clear();
+                _daysController.clear();
+                _monthsController.clear();
+                _yearsController.clear();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF05BFDB),
@@ -152,20 +178,21 @@ class _MontofuturoState extends State<Montofuturo> {
     );
   }
 
-  Future<void> _selectDate(
-    BuildContext context,
-    TextEditingController controller,
-  ) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      setState(() {
-        controller.text = _calculator.formatDate(picked);
-      });
+  // Método para formatear el monto según el formato seleccionado
+  String _formatAmountResult(double amount) {
+    switch (_selectedView) {
+      case 'Entero':
+        return _calculator.formatNumber(amount.round().toDouble());
+      case 'Un decimal':
+        return _calculator.formatNumber(
+          double.parse(amount.toStringAsFixed(1)),
+        );
+      case 'Dos decimales':
+        return _calculator.formatNumber(
+          double.parse(amount.toStringAsFixed(2)),
+        );
+      default:
+        return _calculator.formatNumber(amount);
     }
   }
 
@@ -247,6 +274,19 @@ class _MontofuturoState extends State<Montofuturo> {
                     Icons.calendar_view_month,
                   ),
                 ],
+                const SizedBox(height: 20),
+
+                // Formato del resultado (añadir esta sección)
+                const Text(
+                  'Formato del resultado',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildDropdown(),
                 const SizedBox(height: 30),
 
                 // Botón de Calcular
@@ -254,6 +294,58 @@ class _MontofuturoState extends State<Montofuturo> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // Agregar este método para el dropdown de formatos
+  Widget _buildDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.white70),
+        borderRadius: BorderRadius.circular(30),
+        color: Colors.white.withOpacity(0.1),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: _selectedView,
+          icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+          dropdownColor: const Color(0xFF088395),
+          onChanged: (String? newValue) {
+            setState(() {
+              _selectedView = newValue!;
+            });
+          },
+          items: const [
+            DropdownMenuItem(
+              value: 'Normal',
+              child: Text(
+                'Formato normal',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Entero',
+              child: Text(
+                'Sin decimales',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'Un decimal',
+              child: Text('Un decimal', style: TextStyle(color: Colors.white)),
+            ),
+            DropdownMenuItem(
+              value: 'Dos decimales',
+              child: Text(
+                'Dos decimales',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:prestapp/screens/compuesto/services/calcularTiempo.dart';
+import 'package:prestapp/screens/i_compuesto/services/calcularMontoFuturo.dart';
 
-class Tiempo extends StatefulWidget {
-  const Tiempo({super.key});
+class Montofuturo extends StatefulWidget {
+  const Montofuturo({super.key});
 
   @override
-  State<Tiempo> createState() => _Tiempo();
+  State<Montofuturo> createState() => _MontofuturoState();
 }
 
-class _Tiempo extends State<Tiempo> {
+class _MontofuturoState extends State<Montofuturo> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _montoFuturoController = TextEditingController();
-  final TextEditingController _rateController = TextEditingController();
   final TextEditingController _capitalController = TextEditingController();
-  //final TextEditingController _startDateController = TextEditingController();
-  //final TextEditingController _endDateController = TextEditingController();
-  //final TextEditingController _daysController = TextEditingController();
-  //final TextEditingController _monthsController = TextEditingController();
-  //final TextEditingController _yearsController = TextEditingController();
+  final TextEditingController _rateController = TextEditingController();
+  final TextEditingController _startDateController = TextEditingController();
+  final TextEditingController _endDateController = TextEditingController();
+  final TextEditingController _daysController = TextEditingController();
+  final TextEditingController _monthsController = TextEditingController();
+  final TextEditingController _yearsController = TextEditingController();
   double? _futureAmount;
-  //bool _knowsExactDates = true;
+  bool _knowsExactDates = true;
   String frecuenciaSeleccionada = 'Anual';
   final Map<String, int> opcionesFrecuencia = {
     'Anual': 1,
@@ -30,21 +29,35 @@ class _Tiempo extends State<Tiempo> {
     'Mensual': 12
   };
 
-  final TiempoCalculator _calculator = TiempoCalculator();
+  final MontofuturoCalcular _calculator = MontofuturoCalcular();
 
   void _calculateFutureAmount() {
     if (_formKey.currentState!.validate()) {
       final double capital = double.parse(_capitalController.text);
-      final double montofuturo = double.parse(_montoFuturoController.text);
       final double rate = double.parse(_rateController.text);
+      DateTime startDate;
+      DateTime endDate;
       final int veces = opcionesFrecuencia[frecuenciaSeleccionada]!;
 
+      if (_knowsExactDates) {
+        startDate = _calculator.parseDate(_startDateController.text);
+        endDate = _calculator.parseDate(_endDateController.text);
+      } else {
+        final int days = int.tryParse(_daysController.text) ?? 0;
+        final int months = int.tryParse(_monthsController.text) ?? 0;
+        final int years = int.tryParse(_yearsController.text) ?? 0;
+        startDate = DateTime.now();
+        endDate =
+            startDate.add(Duration(days: days + months * 30 + years * 365));
+      }
+
       setState(() {
-        _futureAmount = _calculator.calculateTiempo(
+        _futureAmount = _calculator.calculateFutureAmount(
             capital: capital,
-            interes: rate / 100,
-            vecesporano: veces,
-            montofuturo: montofuturo);
+            rate: rate / 100,
+            startDate: startDate,
+            endDate: endDate,
+            vecesporano: veces);
       });
     }
   }
@@ -68,7 +81,7 @@ class _Tiempo extends State<Tiempo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cálculo del Tiempo"),
+        title: const Text("Cálculo del Monto Futuro"),
         centerTitle: true,
       ),
       body: Padding(
@@ -128,39 +141,110 @@ class _Tiempo extends State<Tiempo> {
               ),
               const SizedBox(height: 24),
               TextFormField(
-                controller: _montoFuturoController,
+                controller: _rateController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: "Monto Futuro",
+                  labelText: "Tasa de Interés (%)",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30.0),
                   ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese el monto futuro';
+                    return 'Por favor ingrese la tasa de interés';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
-              TextFormField(
-                controller: _rateController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Tasa de interes %",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese el monto futuro';
-                  }
-                  return null;
+              SwitchListTile(
+                title: const Text("¿Conoce las fechas exactas del crédito?"),
+                value: _knowsExactDates,
+                onChanged: (bool value) {
+                  setState(() {
+                    _knowsExactDates = value;
+                  });
                 },
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+              if (_knowsExactDates) ...[
+                TextFormField(
+                  controller: _startDateController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    labelText: "Fecha de Inicio",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () =>
+                          _selectDate(context, _startDateController),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor ingrese la fecha de inicio';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _endDateController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    labelText: "Fecha de Finalización",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () => _selectDate(context, _endDateController),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor ingrese la fecha de finalización';
+                    }
+                    return null;
+                  },
+                ),
+              ] else ...[
+                TextFormField(
+                  controller: _daysController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Número de Días",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _monthsController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Número de Meses",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _yearsController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Número de Años",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -170,7 +254,7 @@ class _Tiempo extends State<Tiempo> {
                     backgroundColor: const Color(0xFF232323),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text("Calcular Tiempo"),
+                  child: const Text("Calcular Monto Futuro"),
                 ),
               ),
               const SizedBox(height: 20),
@@ -197,7 +281,7 @@ class _Tiempo extends State<Tiempo> {
                           Expanded(
                               child: Center(
                             child: Text(
-                              "Tiempo necesario: ${_calculator.formatNumber(_futureAmount!)} años",
+                              "Monto Futuro: ${_calculator.formatNumber(_futureAmount!)}",
                               style: const TextStyle(
                                 fontSize: 18,
                                 color: Colors.white,

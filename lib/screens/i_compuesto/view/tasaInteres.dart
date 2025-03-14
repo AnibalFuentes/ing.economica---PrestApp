@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:prestapp/screens/compuesto/services/calcularTasaInteres.dart';
+import 'package:prestapp/screens/i_compuesto/services/calcularTasaInteres.dart';
 
 class TasaInteres extends StatefulWidget {
   const TasaInteres({super.key});
@@ -26,7 +26,7 @@ class _TasaInteres extends State<TasaInteres> {
     'Cuatrimestral': 3,
     'Trimestral': 4,
     'Bimestral': 6,
-    'Mensual': 12
+    'Mensual': 12,
   };
 
   final InterestCalculator _calculator = InterestCalculator();
@@ -47,23 +47,27 @@ class _TasaInteres extends State<TasaInteres> {
         final int months = int.tryParse(_monthsController.text) ?? 0;
         final int years = int.tryParse(_yearsController.text) ?? 0;
         startDate = DateTime.now();
-        endDate =
-            startDate.add(Duration(days: days + months * 30 + years * 365));
+        endDate = startDate.add(
+          Duration(days: days + months * 30 + years * 365),
+        );
       }
 
       setState(() {
         _futureAmount = _calculator.calculateTasaInteres(
-            capital: capital,
-            startDate: startDate,
-            endDate: endDate,
-            vecesporano: veces,
-            montofuturo: montofuturo);
+          capital: capital,
+          startDate: startDate,
+          endDate: endDate,
+          vecesporano: veces,
+          montofuturo: montofuturo,
+        );
       });
     }
   }
 
   Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -129,13 +133,15 @@ class _TasaInteres extends State<TasaInteres> {
                         frecuenciaSeleccionada = nuevoValor!;
                       });
                     },
-                    items: opcionesFrecuencia.keys
-                        .map<DropdownMenuItem<String>>((String valor) {
-                      return DropdownMenuItem<String>(
-                        value: valor,
-                        child: Text(valor),
-                      );
-                    }).toList(),
+                    items:
+                        opcionesFrecuencia.keys.map<DropdownMenuItem<String>>((
+                          String valor,
+                        ) {
+                          return DropdownMenuItem<String>(
+                            value: valor,
+                            child: Text(valor),
+                          );
+                        }).toList(),
                   ),
                 ),
               ),
@@ -178,8 +184,8 @@ class _TasaInteres extends State<TasaInteres> {
                     ),
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.calendar_today),
-                      onPressed: () =>
-                          _selectDate(context, _startDateController),
+                      onPressed:
+                          () => _selectDate(context, _startDateController),
                     ),
                   ),
                   validator: (value) {
@@ -279,15 +285,16 @@ class _TasaInteres extends State<TasaInteres> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                              child: Center(
-                            child: Text(
-                              "Tasa de Interes: ${_calculator.formatNumber(_futureAmount!)}%",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
+                            child: Center(
+                              child: Text(
+                                "Tasa de Interes: ${_calculator.formatNumber(_futureAmount!)}%",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          )),
+                          ),
                         ],
                       ),
                     ),
